@@ -18,7 +18,7 @@ typedef struct tester_info_t {
 } tester_info;
 
 void print_header();
-tester_info get_and_run_tests();
+tester_info get_and_run_tests(char*);
 
 int fork_and_exec(char *, char **);
 int compile_program(char *);

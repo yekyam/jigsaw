@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "../compare.h"
+#include "../src/headers/compare.h"
 
 
 char** tokenize(char* line, size_t line_length, size_t* out_num_tokens) 
