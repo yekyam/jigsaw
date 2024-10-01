@@ -8,6 +8,8 @@
 #include <unistd.h>
 #include <string.h>
 #include <sys/wait.h>
+#include <fcntl.h>
+#include <stdbool.h>
 
 #include "colors.h"
 
@@ -20,7 +22,7 @@ typedef struct tester_info_t {
 void print_header();
 tester_info get_and_run_tests(char*);
 
-int fork_and_exec(char *, char **);
+int fork_and_exec(char*, char *, char **);
 int compile_program(char *);
 int run_program(char *);
 char *lazy_strcat(char*, char *);

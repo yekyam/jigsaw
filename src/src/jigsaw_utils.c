@@ -21,7 +21,7 @@ void print_footer(tester_info t)
  * \param args The arguments to pass to execvp, must be null terminated.
  * \return Returns 0 on success, other if error.
  */
-int fork_and_exec(char* program, char** args)
+int fork_and_exec(char* output_file, char* program, char** args)
 {
 	int ret = fork();
 	if (ret == -1)
@@ -31,6 +31,20 @@ int fork_and_exec(char* program, char** args)
 	}
 	else if (ret == 0)
 	{
+		if (output_file != NULL)
+		{
+			int close_ret = close(STDOUT_FILENO);
+			if (close_ret == -1)
+			{
+				puts("couldn't close");
+			}
+			int ret = open(output_file, O_WRONLY);
+			if (ret < 0)
+			{
+				puts("Couldn't open file??");
+			}
+			dup2(STDERR_FILENO, STDOUT_FILENO);
+		}
 		execvp(program, args);
 		perror("couldn't exec");
 		exit(EXIT_FAILURE);
@@ -53,7 +67,7 @@ int fork_and_exec(char* program, char** args)
 int compile_program(char* path)
 {
 	char *gcc_args[] = {"gcc", path, NULL};
-	return fork_and_exec(gcc_args[0], gcc_args);
+	return fork_and_exec("./logfile", gcc_args[0], gcc_args);
 }
 
 /* Runs a executable in a child process.
@@ -63,7 +77,7 @@ int compile_program(char* path)
 int run_program(char* path)
 {
 	char *program_args[] = {path, NULL};
-	return fork_and_exec(program_args[0], program_args);
+	return fork_and_exec(NULL, program_args[0], program_args);
 }
 
 tester_info get_and_run_tests(char* test_dir)
@@ -108,7 +122,7 @@ tester_info get_and_run_tests(char* test_dir)
 			if (ret != 0)
 			{
 				printf("\t-couldn't compile file: %s\n", file_name);
-				remove(out_file);
+				continue;
 			}
 			
 			ret = run_program(out_file);
