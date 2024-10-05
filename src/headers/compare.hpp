@@ -1,9 +1,11 @@
-#ifndef COMPARE_H
-#define COMPARE_H
+#ifndef COMPARE_HPP
+#define COMPARE_HPP
 
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
+#include <array>
 
 bool is_equal_array_void(void* arr1, void* arr2, size_t size1, size_t size2)
 {
@@ -11,21 +13,10 @@ bool is_equal_array_void(void* arr1, void* arr2, size_t size1, size_t size2)
 	return size1 == size2 && !memcmp(arr1, arr2, size1);
 }
 
-bool is_equal_array_str(char** arr1, char** arr2, size_t size1, size_t size2)
+template <class T, std::size_t S>
+bool is_equal_array(std::array<T, S> a1, std::array<T, S> a2)
 {
-	if (size1 != size2)
-	{
-		return false;
-	}
-
-	for (size_t i = 0; i < size1; i++)
-	{
-		if (strcmp(arr1[i], arr2[i]) != 0)
-		{
-			return false;
-		}
-	}
-	return true;
+	return a1 == a2;
 }
 
 /* Prints the given token array
@@ -38,6 +29,16 @@ void print_token_array(char** token_array, size_t size)
 	for (size_t i = 0; i < size; i++)
 	{
 		printf("\t%s\n", token_array[i]);
+	}
+}
+
+template <typename T, std::size_t N>
+void print_token_array(std::array<T, N> token_array)
+{
+	std::cout << "Printing " << token_array.size() << " items:\n";
+	for (const auto &item : token_array)
+	{
+		std::cout << '\t' << item << '\n';
 	}
 }
 

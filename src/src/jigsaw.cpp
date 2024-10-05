@@ -1,4 +1,4 @@
-#include "jigsaw_utils.h"
+#include "jigsaw_utils.hpp"
 
 /*TODO: make a redirect system to avoid clogging output*/
 
@@ -11,6 +11,6 @@ int main(int argc, char** argv)
 	}
 	char *test_dir = argv[1];
 	print_header();
-	tester_info t = get_and_run_tests(test_dir);
+	TesterInfo t = get_and_run_tests(test_dir);
 	print_footer(t);	
 }

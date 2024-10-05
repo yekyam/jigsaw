@@ -1,2 +1,2 @@
-jigsaw: ./src/src/*.c ./src/headers/*.h
-	gcc -Wall -o jigsaw -I./src/headers ./src/src/*.c
+jigsaw: ./src/src/*.cpp ./src/headers/*.hpp
+	g++ -Wall -o jigsaw -I./src/headers ./src/src/*.cpp -std=c++20

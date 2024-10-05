@@ -1,4 +1,4 @@
-#include "jigsaw_utils.h"
+#include "jigsaw_utils.hpp"
 
 void print_header() {
 	print_for("*", 20);
@@ -7,13 +7,12 @@ void print_header() {
 	printf("\n");
 }
 
-void print_footer(tester_info t)
+void print_footer(TesterInfo t)
 {
 	print_for("*", 20);
-	printf("[%d/%d] Tests Passed", t.tests_passed, t.tests_total);
+	std::cout << "[" << t.num_passed << "/" << t.num_tests << "] tests passed";
 	print_for("*", 20);
-	printf("\n\n");
-
+	std::cout << "\n\n";
 }
 
 /* Forks the current process and execs the executable with the given args.
@@ -21,7 +20,7 @@ void print_footer(tester_info t)
  * \param args The arguments to pass to execvp, must be null terminated.
  * \return Returns 0 on success, other if error.
  */
-int fork_and_exec(char* output_file, int flags, char* program, char** args)
+int fork_and_exec(std::string_view output_file, int flags, const char* program,  const char** args)
 {
 	int ret = fork();
 	if (ret == -1)
@@ -31,7 +30,7 @@ int fork_and_exec(char* output_file, int flags, char* program, char** args)
 	}
 	else if (ret == 0)
 	{
-		if (output_file != NULL)
+		if (output_file.size() != 0)
 		{
 			int close_ret = close(STDOUT_FILENO);
 			int other_close_ret = close(STDERR_FILENO);
@@ -39,7 +38,7 @@ int fork_and_exec(char* output_file, int flags, char* program, char** args)
 			{
 				puts("couldn't close");
 			}
-			int ret = open(output_file, flags, S_IWUSR | S_IRUSR);
+			int ret = open(output_file.data(), flags, S_IWUSR | S_IRUSR);
 			if (ret < 0)
 			{
 				puts("Couldn't open file??");
@@ -48,7 +47,7 @@ int fork_and_exec(char* output_file, int flags, char* program, char** args)
 			dup2(STDERR_FILENO, STDOUT_FILENO);
 			print_for("*", 20);
 		}
-		execvp(program, args);
+		execvp(program, (char* const*)args);
 		perror("couldn't exec");
 		exit(EXIT_FAILURE);
 	}
@@ -67,9 +66,9 @@ int fork_and_exec(char* output_file, int flags, char* program, char** args)
  * \param path The path to the program (can be relative).
  * \return Returns 0 on success, other if error.
  */
-int compile_program(char* path)
+int compile_program(const std::string& path)
 {
-	char *gcc_args[] = {"gcc", path, NULL};
+	char const *gcc_args[] = {"gcc", path.c_str(), NULL};
 	return fork_and_exec("./logfile.txt", O_WRONLY | O_CREAT | O_APPEND, gcc_args[0], gcc_args);
 }
 
@@ -77,13 +76,13 @@ int compile_program(char* path)
  * \param path The path to the program (can be relative).
  * \return Returns 0 on success, other if error.
  */
-int run_program(char* path)
+int run_program(const std::string& path)
 {
-	char *program_args[] = {path, NULL};
+	const char *program_args[] = {path.c_str(), NULL};
 	return fork_and_exec("./program_output.txt", O_WRONLY | O_CREAT | O_APPEND, program_args[0], program_args);
 }
 
-tester_info get_and_run_tests(char* test_dir)
+TesterInfo get_and_run_tests(char* test_dir)
 {
 	chdir(test_dir);
 
@@ -100,11 +99,11 @@ tester_info get_and_run_tests(char* test_dir)
 	 */
 	struct dirent **dirs = NULL;
 
-	tester_info tests = {.tests_passed = 0, .tests_total = 0};
+	TesterInfo tests;
 
 	int num_ents = scandir(".", &dirs, NULL, NULL);
 
-	char *out_file = "./a.out";
+	std::string out_file = "./a.out";
 
 
 	if (num_ents == -1)
@@ -119,7 +118,7 @@ tester_info get_and_run_tests(char* test_dir)
 		{
 			char *file_name = dirs[num_ents]->d_name;
 
-			tests.tests_total++;
+			tests.num_tests++;
 			int ret = compile_program(file_name);
 
 			if (ret != 0)
@@ -129,17 +128,21 @@ tester_info get_and_run_tests(char* test_dir)
 			}
 			
 			ret = run_program(out_file);
-			remove(out_file);
+			remove(out_file.c_str());
 
 			printf("\t-");
 			if (ret == 0)
 			{
-				tests.tests_passed++;
-				printf("%s%s\tPASSED", COLORS.GREEN, file_name);
-			} else {
-				printf("%s%s\tFAILED", COLORS.RED, file_name);
+				tests.num_passed++;
+				// printf("%s%s\tPASSED", COLORS::GREEN, file_name);
+				std::cout << COLORS::GREEN << file_name << "\t\tPASSED";
 			}
-			printf("%s\n", COLORS.NORMAL);
+			else
+			{
+				//printf("%s%s\tFAILED", COLORS::RED, file_name);
+				std::cout << COLORS::RED << file_name << "\t\tFAILED";
+			}
+			std::cout << COLORS::NORMAL << '\n';
 		}
 		free(dirs[num_ents]);
 	}
@@ -148,23 +151,8 @@ tester_info get_and_run_tests(char* test_dir)
 	return tests;
 }
 
-void print_for(char* s, int count) {
+void print_for(std::string_view s, int count) {
 	for (int i = 0; i < count; i++) {
-		printf("%s", s);
+		std::cout << s;
 	}
-}
-
-char* lazy_strcat(char* s1, char* s2)
-{
-	int s1_size = strlen(s1);
-	int s2_size = strlen(s2);
-	int total_size = s1_size + s2_size + 1;
-
-	char *new_str = malloc(total_size);
-
-	memcpy(new_str, s1, s1_size);
-	memcpy(new_str + s1_size, s2, s2_size);
-	new_str[total_size-1] = 0;
-
-	return new_str;
 }
