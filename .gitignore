@@ -1,1 +1,3 @@
 jigsaw
+.vscode/*
+./tests/*

@@ -2,19 +2,9 @@
 #define JIGSAW_UTILS_HPP
 
 #define _DEFAULT_SOURCE
-#include <dirent.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <string.h>
-#include <sys/wait.h>
-#include <fcntl.h>
-#include <stdbool.h>
 
-#include <iostream>
-#include <string>
-#include <string_view>
-
+#include "common.hpp"
+#include "child_proc_args.hpp"
 #include "colors.hpp"
 
 struct TesterInfo {
@@ -33,12 +23,17 @@ struct TesterInfo {
 	}
 };
 
+enum class CompileAndRunStatus
+{
+	FAILURE,
+	SKIPPED,
+	SUCCESS
+};
+
 void print_header();
 TesterInfo get_and_run_tests(char*);
 
-int fork_and_exec(std::string_view, int, const char *, const char **);
-int compile_program(const std::string&);
-int run_program(const std::string&);
+int compile_and_run_program(std::string_view);
 void print_footer(TesterInfo);
 void print_for(std::string_view, int);
 

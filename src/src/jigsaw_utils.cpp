@@ -2,9 +2,10 @@
 
 void print_header() {
 	print_for("*", 20);
-	printf("Test Start");
+	std::cout << "Test Start";
+
 	print_for("*", 20);
-	printf("\n");
+	std::cout << '\n';
 }
 
 void print_footer(TesterInfo t)
@@ -15,71 +16,92 @@ void print_footer(TesterInfo t)
 	std::cout << "\n\n";
 }
 
-/* Forks the current process and execs the executable with the given args.
- * \param program The name of the executable (can be relative).
- * \param args The arguments to pass to execvp, must be null terminated.
- * \return Returns 0 on success, other if error.
- */
-int fork_and_exec(std::string_view output_file, int flags, const char* program,  const char** args)
-{
-	int ret = fork();
-	if (ret == -1)
-	{
-		perror("couldn't fork?");
-		return -1;
-	}
-	else if (ret == 0)
-	{
-		if (output_file.size() != 0)
-		{
-			int close_ret = close(STDOUT_FILENO);
-			int other_close_ret = close(STDERR_FILENO);
-			if ((close_ret == -1) || (other_close_ret == -1))
-			{
-				puts("couldn't close");
-			}
-			int ret = open(output_file.data(), flags, S_IWUSR | S_IRUSR);
-			if (ret < 0)
-			{
-				puts("Couldn't open file??");
-			}
-			dup2(ret, STDOUT_FILENO);
-			dup2(STDERR_FILENO, STDOUT_FILENO);
-			print_for("*", 20);
-		}
-		execvp(program, (char* const*)args);
-		perror("couldn't exec");
-		exit(EXIT_FAILURE);
-	}
-	else {
-		int wstatus;
-		wait(&wstatus);
-		if (WIFEXITED(wstatus))
-		{
-			return WEXITSTATUS(wstatus);
-		}
-		return -1;
+void print_for(std::string_view s, int count) {
+	for (int i = 0; i < count; i++) {
+		std::cout << s;
 	}
 }
 
-/* Compiles a program at the given path to the default (a.out).
- * \param path The path to the program (can be relative).
- * \return Returns 0 on success, other if error.
- */
-int compile_program(const std::string& path)
+CompileAndRunStatus compile_and_run_program(std::string_view filename, Redirects r)
 {
-	char const *gcc_args[] = {"gcc", path.c_str(), NULL};
-	return fork_and_exec("./logfile.txt", O_WRONLY | O_CREAT | O_APPEND, gcc_args[0], gcc_args);
-}
+	bool skipped = true;
 
-/* Runs a executable in a child process.
- * \param path The path to the program (can be relative).
- * \return Returns 0 on success, other if error.
- */
-int run_program(const std::string& path)
-{
-	const char *program_args[] = {path.c_str(), NULL};
-	return fork_and_exec("./program_output.txt", O_WRONLY | O_CREAT | O_APPEND, program_args[0], program_args);
+	if (filename.find(".c") != filename.npos) // c program, compile w gcc
+	{
+		skipped = false;
+		std::vector<char *> proc_args;
+
+		// args.args = {"gcc", filename.data(), "-Waall", "-Werror", NULL};
+		proc_args.reserve(5);
+		proc_args.push_back(const_cast<char*>("gcc"));
+		proc_args.push_back(const_cast<char*>(filename.data()));
+		proc_args.push_back(const_cast<char*>("-Wall"));
+		proc_args.push_back(const_cast<char*>("-Werror"));
+		proc_args.push_back(NULL);
+
+		int ret = ChildProcArgs(proc_args, r).fork_and_exec();
+
+		if (ret != 0)
+		{
+			return CompileAndRunStatus::FAILURE;
+		}
+
+		std::vector<char *> run_args;
+
+		run_args.reserve(2);
+		run_args.push_back(const_cast<char *>("./a.out"));
+		run_args.push_back(NULL);
+
+		ret = ChildProcArgs(run_args, r).fork_and_exec();
+
+		if (ret != 0)
+		{
+			return CompileAndRunStatus::FAILURE;
+		}
+	}
+	else if (filename.find(".cpp") != filename.npos) // cpp program, compile w g++
+	{
+		skipped = false;
+		std::vector<char *> proc_args;
+
+		//args.args = {"g++", filename.data(), "-Waall", "-Werror", "-std=C++20", NULL};
+		proc_args.reserve(6);
+		proc_args.push_back(const_cast<char*>("g++"));
+		proc_args.push_back(const_cast<char*>(filename.data()));
+		proc_args.push_back(const_cast<char*>("-Wall"));
+		proc_args.push_back(const_cast<char*>("-Werror"));
+		proc_args.push_back(const_cast<char*>("-std=c++20"));
+		proc_args.push_back(NULL);
+
+		int ret = ChildProcArgs(proc_args, r).fork_and_exec();
+
+		if (ret != 0)
+		{
+			return CompileAndRunStatus::FAILURE;
+		}
+
+		std::vector<char *> run_args;
+
+		run_args.reserve(2);
+		run_args.push_back(const_cast<char *>("./a.out"));
+		run_args.push_back(NULL);
+
+		ret =  ChildProcArgs(run_args, r).fork_and_exec();
+
+		if (ret != 0)
+		{
+			return CompileAndRunStatus::FAILURE;
+		}
+	}
+	else if (filename.find(".py") != filename.npos) // py program, don't compile and just run
+	{
+
+	}
+
+	if (skipped)
+		return CompileAndRunStatus::SKIPPED;
+
+	return CompileAndRunStatus::SUCCESS;
 }
 
 TesterInfo get_and_run_tests(char* test_dir)
@@ -116,31 +138,26 @@ TesterInfo get_and_run_tests(char* test_dir)
 	{
 		if (dirs[num_ents]->d_type == DT_REG)
 		{
-			char *file_name = dirs[num_ents]->d_name;
+			char* file_name = dirs[num_ents]->d_name;
+
 
 			tests.num_tests++;
-			int ret = compile_program(file_name);
+			CompileAndRunStatus status = compile_and_run_program(file_name, Redirects("logfile.out", "logfile.err"));
 
-			if (ret != 0)
-			{
-				printf("\t-couldn't compile file: %s\n", file_name);
-				continue;
-			}
-			
-			ret = run_program(out_file);
 			remove(out_file.c_str());
-
-			printf("\t-");
-			if (ret == 0)
+			if (status == CompileAndRunStatus::SUCCESS)
 			{
 				tests.num_passed++;
 				// printf("%s%s\tPASSED", COLORS::GREEN, file_name);
-				std::cout << COLORS::GREEN << file_name << "\t\tPASSED";
+				std::cout << "\t-" << COLORS::GREEN << file_name << "\t\tPASSED";
 			}
-			else
+			else if (status == CompileAndRunStatus::FAILURE)
 			{
 				//printf("%s%s\tFAILED", COLORS::RED, file_name);
-				std::cout << COLORS::RED << file_name << "\t\tFAILED";
+				std::cout << "\t-"<< COLORS::RED << file_name << "\t\tFAILED";
+			} else
+			{
+				continue;
 			}
 			std::cout << COLORS::NORMAL << '\n';
 		}
@@ -149,10 +166,4 @@ TesterInfo get_and_run_tests(char* test_dir)
 	
 	free(dirs);
 	return tests;
-}
-
-void print_for(std::string_view s, int count) {
-	for (int i = 0; i < count; i++) {
-		std::cout << s;
-	}
 }
