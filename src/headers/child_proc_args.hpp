@@ -6,6 +6,14 @@
 
 #define REDIRECT_ERR_MSG "Couldn't setup redirects\n"
 
+enum RedirectStatus
+{
+	ERROR = -1,
+	SUCCESS_STDOUT_ONLY,
+	SUCCESS_STDERR_ONLY,
+	SUCCESS
+};
+
 class Redirects {
 protected:
 
@@ -24,14 +32,14 @@ public:
 	stderr_filename(stderr_filename)
 	{}
 
-	int setup() {
+	RedirectStatus setup() {
 		if (stdout_filename.size() != 0) {
 			int ret = close(STDOUT_FILENO);
 			int fd = open(stdout_filename.data(), O_APPEND | O_CREAT | O_WRONLY, S_IRUSR | S_IWUSR);
 
 			if ((ret == -1 ) || (fd != STDOUT_FILENO)) {
 				std::cout << REDIRECT_ERR_MSG << " for stdout\n";
-				return -1;
+				return RedirectStatus::ERROR;
 			}
 		}
 		
@@ -48,31 +56,23 @@ public:
 
 				if (ret == -1) {
 					std::cout << "couldn't close stderr!\n";
-					return -1;
+					return RedirectStatus::SUCCESS_STDOUT_ONLY;
 				}
 
 				int ret_dup2 = dup2(fd, STDERR_FILENO);
 				if (ret_dup2 == -1)
 				{
 					std::cout << "couldn't dup2???\n";
-					return -1;
+					return RedirectStatus::SUCCESS_STDOUT_ONLY;
 				}
 
 				if (fd != STDERR_FILENO) {
 					std::cout << "stderr and fd don't match\n";
-					return -1;
-				}
-				else
-				{
-					// std::cout << "fixed?????\n";
-					print_for("*", 20);
-					std::cerr << stderr_filename;
-					print_for("*", 20);
-					std::cerr << '\n';
+					return RedirectStatus::SUCCESS_STDOUT_ONLY;
 				}
 			}
 		}
-		return 0;
+		return RedirectStatus::SUCCESS;
 	}
 };
 
@@ -80,14 +80,32 @@ class ChildProcArgs {
 protected:
 	std::vector<char*> args;
 	std::optional<Redirects> redirects;
+	const std::string_view source;
 
 	void execute() {
 		if (redirects.has_value())
 		{
-			int r = redirects->setup();
-			if (r == -1)
+			RedirectStatus r = redirects->setup();
+			if (r == RedirectStatus::ERROR)
 			{
 				std::cout << "Couldn't setup redirects!\n";
+			}
+			else
+			{
+				if ((r == RedirectStatus::SUCCESS) || (r==RedirectStatus::SUCCESS_STDERR_ONLY))
+				{
+					print_for("*", 20, std::cerr);
+					std::cerr << source << " | " << args[0];
+					print_for("*", 20, std::cerr);
+					std::cerr << '\n';
+				}
+				if ((r == RedirectStatus::SUCCESS) || (r==RedirectStatus::SUCCESS_STDOUT_ONLY))
+				{
+					print_for("*", 20);
+					std::cout << source << " | " << args[0];
+					print_for("*", 20);
+					std::cout << '\n';
+				}
 			}
 		}
 
@@ -102,9 +120,10 @@ protected:
 
 public:
 
-	ChildProcArgs(std::vector<char*> args, std::optional<Redirects> redirects):
+	ChildProcArgs(std::vector<char*> args, std::optional<Redirects> redirects, std::string_view source):
 		args(args), 
-		redirects(redirects)
+		redirects(redirects),
+		source(source)
 	{}
 
 	int fork_and_exec()

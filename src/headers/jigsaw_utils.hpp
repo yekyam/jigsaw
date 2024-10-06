@@ -36,8 +36,5 @@ TesterInfo get_and_run_tests(char*);
 
 int compile_and_run_program(std::string_view);
 void print_footer(TesterInfo);
-void print_for(std::string_view, int);
-
-
 
 #endif

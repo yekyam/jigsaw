@@ -34,7 +34,7 @@ CompileAndRunStatus compile_and_run_program(std::string_view filename, Redirects
 		proc_args.push_back(const_cast<char*>("-Werror"));
 		proc_args.push_back(NULL);
 
-		int ret = ChildProcArgs(proc_args, r).fork_and_exec();
+		int ret = ChildProcArgs(proc_args, r, filename).fork_and_exec();
 
 		if (ret != 0)
 		{
@@ -47,7 +47,7 @@ CompileAndRunStatus compile_and_run_program(std::string_view filename, Redirects
 		run_args.push_back(const_cast<char *>("./a.out"));
 		run_args.push_back(NULL);
 
-		ret = ChildProcArgs(run_args, r).fork_and_exec();
+		ret = ChildProcArgs(run_args, r, filename).fork_and_exec();
 
 		if (ret != 0)
 		{
@@ -68,7 +68,7 @@ CompileAndRunStatus compile_and_run_program(std::string_view filename, Redirects
 		proc_args.push_back(const_cast<char*>("-std=c++20"));
 		proc_args.push_back(NULL);
 
-		int ret = ChildProcArgs(proc_args, r).fork_and_exec();
+		int ret = ChildProcArgs(proc_args, r, filename).fork_and_exec();
 
 		if (ret != 0)
 		{
@@ -81,7 +81,7 @@ CompileAndRunStatus compile_and_run_program(std::string_view filename, Redirects
 		run_args.push_back(const_cast<char *>("./a.out"));
 		run_args.push_back(NULL);
 
-		ret =  ChildProcArgs(run_args, r).fork_and_exec();
+		ret =  ChildProcArgs(run_args, r, filename).fork_and_exec();
 
 		if (ret != 0)
 		{
