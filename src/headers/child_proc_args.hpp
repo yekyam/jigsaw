@@ -63,7 +63,11 @@ public:
 				}
 				else
 				{
-					std::cout << "fixed?????\n";
+					// std::cout << "fixed?????\n";
+					print_for("*", 20);
+					std::cerr << stderr_filename;
+					print_for("*", 20);
+					std::cerr << '\n';
 				}
 			}
 		}
