@@ -1,6 +1,9 @@
 #ifndef COMMON_HPP
 #define COMMON_HPP
 
+/* All of the stl and system libraries needed
+ */
+
 #include <dirent.h>
 #include <stdlib.h>
 #include <unistd.h>

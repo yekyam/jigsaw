@@ -16,7 +16,6 @@ void print_footer(TesterInfo t)
 	std::cout << "\n\n";
 }
 
-
 CompileAndRunStatus compile_and_run_program(std::string_view filename, Redirects r)
 {
 	bool skipped = true;
@@ -101,7 +100,15 @@ CompileAndRunStatus compile_and_run_program(std::string_view filename, Redirects
 
 TesterInfo get_and_run_tests(char* test_dir)
 {
-	chdir(test_dir);
+	TesterInfo tests;
+
+	int chdir_ret = chdir(test_dir);
+
+	if (chdir_ret == -1)
+	{
+		std::cout << "\tCouldn't open dir: `" << test_dir << "`; quitting\n";
+		return tests;
+	}
 
 	/* Procedure Overview
 	 * 1) Get all files in the dir
@@ -116,7 +123,6 @@ TesterInfo get_and_run_tests(char* test_dir)
 	 */
 	struct dirent **dirs = NULL;
 
-	TesterInfo tests;
 
 	int num_ents = scandir(".", &dirs, NULL, NULL);
 
