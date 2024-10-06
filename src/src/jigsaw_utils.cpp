@@ -141,18 +141,19 @@ TesterInfo get_and_run_tests(char* test_dir)
 			char* file_name = dirs[num_ents]->d_name;
 
 
-			tests.num_tests++;
 			CompileAndRunStatus status = compile_and_run_program(file_name, Redirects("logfile.out", "logfile.err"));
 
 			remove(out_file.c_str());
 			if (status == CompileAndRunStatus::SUCCESS)
 			{
+				tests.num_tests++;
 				tests.num_passed++;
 				// printf("%s%s\tPASSED", COLORS::GREEN, file_name);
 				std::cout << "\t-" << COLORS::GREEN << file_name << "\t\tPASSED";
 			}
 			else if (status == CompileAndRunStatus::FAILURE)
 			{
+				tests.num_tests++;
 				//printf("%s%s\tFAILED", COLORS::RED, file_name);
 				std::cout << "\t-"<< COLORS::RED << file_name << "\t\tFAILED";
 			} else

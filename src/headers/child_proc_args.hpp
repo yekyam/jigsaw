@@ -34,16 +34,19 @@ public:
 			}
 		}
 		
-		if (stdout_filename.size() != 0) {
+		if (stderr_filename.size() != 0) {
 			if (stdout_filename == stderr_filename)
 			{
 				dup2(STDOUT_FILENO, STDERR_FILENO);
-			} else {
+				std::cout << "here!\n";
+			}
+			else
+			{
 				int ret = close(STDERR_FILENO);
-				int fd = open(stderr_filename.data(), O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
+				int fd = open(stderr_filename.data(), O_WRONLY | O_CREAT | O_APPEND, S_IRUSR | S_IWUSR);
 
 				if (ret == -1) {
-					std::cout << "coudln't close stderr!\n";
+					std::cout << "couldn't close stderr!\n";
 					return -1;
 				}
 
@@ -51,10 +54,16 @@ public:
 				if (ret_dup2 == -1)
 				{
 					std::cout << "couldn't dup2???\n";
+					return -1;
 				}
 
 				if (fd != STDERR_FILENO) {
 					std::cout << "stderr and fd don't match\n";
+					return -1;
+				}
+				else
+				{
+					std::cout << "fixed?????\n";
 				}
 			}
 		}
