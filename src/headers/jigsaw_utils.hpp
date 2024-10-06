@@ -25,7 +25,8 @@ struct TesterInfo {
 
 enum class CompileAndRunStatus
 {
-	FAILURE,
+	FAILURE_RUNTIME,
+	FAILURE_COMPILE,
 	SKIPPED,
 	SUCCESS
 };

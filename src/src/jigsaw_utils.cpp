@@ -16,11 +16,6 @@ void print_footer(TesterInfo t)
 	std::cout << "\n\n";
 }
 
-void print_for(std::string_view s, int count) {
-	for (int i = 0; i < count; i++) {
-		std::cout << s;
-	}
-}
 
 CompileAndRunStatus compile_and_run_program(std::string_view filename, Redirects r)
 {
@@ -43,7 +38,7 @@ CompileAndRunStatus compile_and_run_program(std::string_view filename, Redirects
 
 		if (ret != 0)
 		{
-			return CompileAndRunStatus::FAILURE;
+			return CompileAndRunStatus::FAILURE_COMPILE;
 		}
 
 		std::vector<char *> run_args;
@@ -56,7 +51,7 @@ CompileAndRunStatus compile_and_run_program(std::string_view filename, Redirects
 
 		if (ret != 0)
 		{
-			return CompileAndRunStatus::FAILURE;
+			return CompileAndRunStatus::FAILURE_RUNTIME;
 		}
 	}
 	else if (filename.find(".cpp") != filename.npos) // cpp program, compile w g++
@@ -77,7 +72,7 @@ CompileAndRunStatus compile_and_run_program(std::string_view filename, Redirects
 
 		if (ret != 0)
 		{
-			return CompileAndRunStatus::FAILURE;
+			return CompileAndRunStatus::FAILURE_COMPILE;
 		}
 
 		std::vector<char *> run_args;
@@ -90,7 +85,7 @@ CompileAndRunStatus compile_and_run_program(std::string_view filename, Redirects
 
 		if (ret != 0)
 		{
-			return CompileAndRunStatus::FAILURE;
+			return CompileAndRunStatus::FAILURE_RUNTIME;
 		}
 	}
 	else if (filename.find(".py") != filename.npos) // py program, don't compile and just run
@@ -151,12 +146,19 @@ TesterInfo get_and_run_tests(char* test_dir)
 				// printf("%s%s\tPASSED", COLORS::GREEN, file_name);
 				std::cout << "\t-" << COLORS::GREEN << file_name << "\t\tPASSED";
 			}
-			else if (status == CompileAndRunStatus::FAILURE)
+			else if (status == CompileAndRunStatus::FAILURE_RUNTIME)
 			{
 				tests.num_tests++;
 				//printf("%s%s\tFAILED", COLORS::RED, file_name);
 				std::cout << "\t-"<< COLORS::RED << file_name << "\t\tFAILED";
-			} else
+			}
+			else if (status == CompileAndRunStatus::FAILURE_COMPILE)
+			{
+				tests.num_tests++;
+
+				std::cout << "\t-" << COLORS::RED << "couldn't compile file `" << file_name << "`";
+			}
+			else
 			{
 				continue;
 			}

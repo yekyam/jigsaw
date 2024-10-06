@@ -2,6 +2,7 @@
 #define CHILD_PROC_ARGS_HPP
 
 #include "common.hpp"
+#include "utils.hpp"
 
 #define REDIRECT_ERR_MSG "Couldn't setup redirects\n"
 
